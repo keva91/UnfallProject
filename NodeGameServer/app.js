@@ -4,9 +4,9 @@ var http = require('http');
 var express = require('express');
 var app = express();
 var server = http.createServer(app);
-
 // Chargement de socket.io
 var io = require('socket.io').listen(server); 
+var fs = require("fs");
 
 
 
@@ -16,7 +16,12 @@ app.get('/', function (req, res) {
     console.log(" first route") 
 }); 
 
-
+app.get('/listScores', function (req, res) {
+   fs.readFile( __dirname + "/" + "scores.json", 'utf8', function (err, data) {
+       console.log( data );
+       res.send( data );
+   });
+})
 
 io.sockets.on('connection', function (socket, pseudo) {
     // Quand un client se connecte, on lui envoie un message
