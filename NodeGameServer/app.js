@@ -6,14 +6,11 @@ var app = express();
 var server = http.createServer(app);
 
 // Chargement de socket.io
-var io = require('socket.io')(server);
+var io = require('socket.io').listen(server); 
+var fs = require("fs");
 
 var port = process.env.PORT || 3000;
 
-// Start server
-server.listen(port,function(){
-    console.log('server is listenning')
-});
 
 
 //first route
@@ -22,7 +19,12 @@ app.get('/', function (req, res) {
     console.log(" first route") 
 }); 
 
-
+app.get('/listScores', function (req, res) {
+   fs.readFile( __dirname + "/" + "scores.json", 'utf8', function (err, data) {
+       console.log( data );
+       res.send( data );
+   });
+})
 
 io.sockets.on('connection', function (socket, pseudo) {
 
@@ -48,7 +50,8 @@ io.sockets.on('connection', function (socket, pseudo) {
 
 });
 
-
-
-
+// Start server
+server.listen(port,function(){
+    console.log('server is listenning')
+});
 
