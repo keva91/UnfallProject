@@ -2,49 +2,46 @@
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 using UnityEngine;
-using SocketIO;
 
 public class Player : MonoBehaviour {
 
+	public bool isLocalPlayer = true; //TODO networking
 
-    private SocketIOComponent socket;
+	Vector3 oldPosition;
+	Vector3 currentPosition;
+	Quaternion oldRotation;
+	Quaternion currentRotation;
 
     // Use this for initialization
     void Start () {
-
-        GameObject go = GameObject.Find("SocketIO");
-        socket = go.GetComponent<SocketIOComponent>();
-
-       
-
-        socket.Emit("connexion");
-
-        socket.On("message", (SocketIOEvent e) => {
-            print("message ");
-            Debug.Log("message");
-            Debug.Log(e);
-        });
-
-
+		oldPosition = transform.position;
+		currentPosition = oldPosition;
+		oldRotation = transform.rotation;
+		currentRotation = oldRotation;
     }
-
-
-   
 
 
     void Update()
     {
-        //socket.On("message", (SocketIOEvent e) => {
-        //    print("message ");
-        //    Debug.Log("message");
-        //    Debug.Log(e);
-        //});
+     
+		if(!isLocalPlayer){
+			return;
+		}
+
+		currentPosition = transform.position;
+		currentRotation = transform.rotation;
+
+		if(currentPosition != oldPosition){
+			Debug.Log("changement pos");
+			oldPosition = currentPosition;
+		}
+
+		if(currentRotation != oldRotation){
+			Debug.Log("changement rotation");
+			oldRotation = currentRotation;
+		}
+
     }
 
-    void connectM(SocketIOEvent iOEvent)
-    {
-        print("connected ");
-        print(iOEvent);
-    }
-
+    
 }
