@@ -52,6 +52,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canvas: {fileID: 0}
+  c1: {fileID: 0}
   io: {fileID: 0}
-  playerNameInput: {fileID: 0}
-  player: {fileID: 0}
+  playerNameInput1: {fileID: 0}
+  playerNameInput2: {fileID: 0}
+  player: {fileID: 1518846439182208, guid: ecfa371697ea9a94c9bc7996a16b185a, type: 2}

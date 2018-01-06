@@ -2,10 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 using UnityEngine;
+using System;
+
+
 
 public class Player : MonoBehaviour {
 
 	public bool isLocalPlayer = true; //TODO networking
+	public int highScore;
+	public int score = 0;
+	public string pseudo;
+	public int id;
 
 	Vector3 oldPosition;
 	Vector3 currentPosition;
@@ -32,12 +39,12 @@ public class Player : MonoBehaviour {
 		currentRotation = transform.rotation;
 
 		if(currentPosition != oldPosition){
-			Debug.Log("changement pos");
+			//Debug.Log("changement pos");
 			oldPosition = currentPosition;
 		}
 
 		if(currentRotation != oldRotation){
-			Debug.Log("changement rotation");
+			//Debug.Log("changement rotation");
 			oldRotation = currentRotation;
 		}
 
