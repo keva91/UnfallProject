@@ -54,6 +54,8 @@ MonoBehaviour:
   canvas: {fileID: 0}
   c1: {fileID: 0}
   io: {fileID: 0}
-  playerNameInput1: {fileID: 0}
-  playerNameInput2: {fileID: 0}
-  player: {fileID: 1518846439182208, guid: ecfa371697ea9a94c9bc7996a16b185a, type: 2}
+  playerNameInputNewAccount: {fileID: 0}
+  playerNameInputLogin: {fileID: 0}
+  errorNewAccount: {fileID: 0}
+  errorLogin: {fileID: 0}
+  player: {fileID: 1242927339448220, guid: 79ae88e66e3f1cc49bf2da934a36218b, type: 2}

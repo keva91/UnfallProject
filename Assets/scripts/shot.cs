@@ -5,36 +5,45 @@ using System.Collections;
 public class shot : MonoBehaviour{
 
 
-    ///////////////////////////////////////////////////////////////////VARIABLES///////////////////////////////////////////////////////////////////////
-
-    
- public Rigidbody bulletCasing;
-    
- public int ejectSpeed = 100;
-    
- public double fireRate = 0.5;
- 
- private double nextFire = 0.0;
-
-
    
-    void Update()
-    {
+	[HideInInspector]
+	public Player playerFrom;
+	public bool fakeshot = false;
 
-        if (Input.GetButton("Fire1") && Time.time > nextFire)
-        {
-             Rigidbody bullet;
+	public float force1 = 20;
+	void OnCollisionEnter(Collision collision)
+	{
+		if (!fakeshot) {
+			
+		
+			var hit = collision.gameObject;
+			Player playerhit = hit.GetComponent<Player> ();
 
-            nextFire = Time.time + fireRate;
-
-            bullet = Instantiate(bulletCasing, transform.position, transform.rotation);
-          
-            bullet.velocity = transform.TransformDirection(Vector3.left* ejectSpeed);
-          
-        }
-
+			if (playerhit) {
 
 
- }
+				var dir = (collision.transform.position - playerFrom.transform.position);
 
+				//hit.GetComponent<CharacterMotor>().SetVelocity(dir*force1);
+				//.Knockback(dir);
+				NetworkManager.instance.GetComponent<NetworkManager>().CommandHit(playerhit.pseudo,dir*2);
+
+				/*ImpactReceiver script = hit.gameObject.GetComponent<ImpactReceiver> ();
+				if (script) {
+					script.AddImpact (dir * 2);
+				} */
+
+				Debug.Log (playerFrom.pseudo + " hit " + playerhit.pseudo);
+				Destroy (gameObject, 0.1f);
+
+			}
+		}
+
+		Destroy(gameObject,0.2f);
+	}
+
+
+	void Start () {
+		Destroy(gameObject,2f);
+	}
 }

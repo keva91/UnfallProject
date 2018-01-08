@@ -23,9 +23,9 @@ GameObject:
   - component: {fileID: 65549299323356210}
   - component: {fileID: 23602251822371530}
   - component: {fileID: 54627687159279560}
-  - component: {fileID: 114697055384024928}
+  - component: {fileID: 114637455773107366}
   m_Layer: 0
-  m_Name: bullet 1
+  m_Name: bullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38,7 +38,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1171849313559222}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.008, y: 0.131, z: 0.976}
+  m_LocalPosition: {x: 0.008, y: 0.797, z: 2.466}
   m_LocalScale: {x: 0.33720535, y: 0.17814045, z: 0.2593889}
   m_Children: []
   m_Father: {fileID: 0}
@@ -57,7 +57,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 0d3bc4a275e352c4886d0b4461c31541, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -97,7 +97,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!65 &65549299323356210
 BoxCollider:
   m_ObjectHideFlags: 1
@@ -110,7 +110,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &114697055384024928
+--- !u!114 &114637455773107366
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -118,6 +118,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 1171849313559222}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6eacad417825f444d9da00b89611f014, type: 3}
+  m_Script: {fileID: 11500000, guid: 4dfea986d6f803940a7655f7fa25d303, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerFrom: 
+  force: 50

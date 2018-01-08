@@ -16,6 +16,18 @@ public class NetworkManager : MonoBehaviour {
 	public Text errorNewAccount;
 	public Text errorLogin;
 	public GameObject player;
+	public string localName;
+
+
+	void Awake()
+	{
+		if (instance == null) {
+			instance = this;
+		}else if (instance != this){
+			Destroy(gameObject);
+		}
+		DontDestroyOnLoad(gameObject);
+	}
 
 
 
@@ -33,25 +45,22 @@ public class NetworkManager : MonoBehaviour {
 			t.test = 123;
 			t.test2 = "test1";
 
-			io.Emit("test-event2", JsonUtility.ToJson(t));
 
-			TestObject t2 = new TestObject();
-			t2.test = 1234;
-			t2.test2 = "test2";
-
-			io.Emit("test-event3", JsonUtility.ToJson(t2), (string data) => {
-				Debug.Log(data);
-			});
 
 		});
 
 		io.Connect();
 
-		io.On("test-event", (SocketIOEvent e) => {
-			Debug.Log(e.data);
-		});
 
 		io.On("other player connected", OnOtherPlayerConnected);
+		io.On("other player disconnected", OnOtherPlayerDisconnect);
+
+		io.On("player move", OnPlayerMove);
+		io.On("player turn", OnPlayerTurn);
+		io.On("player shoot", OnPlayerShoot);
+		io.On("touch", OnTouch);
+
+
 
 	}
 
@@ -67,49 +76,61 @@ public class NetworkManager : MonoBehaviour {
 		Debug.Log(data);
 
 
-		yield return new WaitForSeconds(0.5f);
+		yield return new WaitForSeconds(0.3f);
 
 		io.Emit("player connect");
 
-		yield return new WaitForSeconds(1f);
+		yield return new WaitForSeconds(0.5f);
 
-		UserJSON P = JsonUtility.FromJson<UserJSON>(data.ToString());
+		UserJSON user = JsonUtility.FromJson<UserJSON>(data.ToString());
 
 
 		canvas.gameObject.SetActive(false);
 		c1.gameObject.SetActive(false);
 		Vector3 position = new Vector3(0,5,0);
 		Quaternion rotation = Quaternion.Euler(0,0,0);
-		GameObject playertest = Instantiate(player, position, rotation) as GameObject;
+		GameObject playerCstr = Instantiate(player, position, rotation) as GameObject;
 
 
 
-		Player pC = playertest.GetComponent<Player>();
+		Player pC = playerCstr.GetComponent<Player>();
 		pC.isLocalPlayer = true;
-		pC.pseudo = P.pseudo;
-		pC.score = P.score;
+		pC.pseudo = user.pseudo;
+		pC.score = user.score;
+		pC.currentPosition = position;
+		pC.currentRotation = rotation;
 
-		string playerAsJson = JsonUtility.ToJson(pC);
+		string playerAsJson = PlayerJSON.CreateToJSON(pC);
+
+
 		io.Emit("play", playerAsJson);
 
-		Transform t = player.transform.Find("Canvas");
-		Debug.Log(t);
+		Transform t = playerCstr.transform.Find("Canvas");
 		Transform t1 = t.transform.Find("pseudo");
-		Debug.Log(t1);
 		Text playerName = t1.GetComponent<Text>();
+
 		playerName.text = pC.pseudo;
+		playerCstr.name = pC.pseudo;
+		localName = pC.pseudo;
+		Debug.Log(playerName.text);
 
 	}
 
 	public void NewAccount(){
 		var from = "NewAccount";
-		WWWForm form = new WWWForm();
-		form.AddField("pseudo", playerNameInputNewAccount.text);
 
-		byte[] rawFormData = form.data;
-		
-		WWW request = new WWW("http://localhost:3000/pseudo",rawFormData);
+
+		if (playerNameInputNewAccount.text != "") {
+			WWWForm form = new WWWForm();
+
+			form.AddField("pseudo", playerNameInputNewAccount.text);
+
+			byte[] rawFormData = form.data;
+
+			WWW request = new WWW("https://fierce-stream-59902.herokuapp.com/user",rawFormData);
 			StartCoroutine(OnResponse(request,from));
+		}
+
 	}
 
 
@@ -117,17 +138,24 @@ public class NetworkManager : MonoBehaviour {
 		var from = "login";
 		var pseudo = playerNameInputLogin.text;
 		Debug.Log (pseudo);
-		WWW request = new WWW("http://localhost:3000/pseudo/"+pseudo);
-		StartCoroutine(OnResponse(request,from));
+
+		if (pseudo != ""){
+			WWW request = new WWW("https://fierce-stream-59902.herokuapp.com/user/"+pseudo);
+			StartCoroutine(OnResponse(request,from));
+		}
+
 	}
 
 
 	private IEnumerator OnResponse(WWW req,string from){
 		yield return req;
 		Debug.Log (req.text);
-		if (from == "login") {
+		ErrorJSON res = JsonUtility.FromJson<ErrorJSON>(req.text.ToString());
+	
+			
+		if (from == "login") { 
 
-			if (req.text != "false") {
+			if (res.erreur == null) {
 				Debug.Log ("login successfull");
 				errorLogin.gameObject.SetActive(false);
 				Launch(req.text);
@@ -139,9 +167,10 @@ public class NetworkManager : MonoBehaviour {
 
 		} else {
 
-			if (req.text != "false") {
+			if (res.erreur == null) {
 				Debug.Log ("register successfull");
 				errorNewAccount.gameObject.SetActive(false);
+				Launch(req.text);
 			} else {
 				Debug.Log (" pseudo deja pris");
 				//afficher erreur
@@ -152,36 +181,150 @@ public class NetworkManager : MonoBehaviour {
 
 
 
-	void OnOtherPlayerConnected(SocketIOEvent socketIOEvent)
-	{
-		print("Someone else joined");
-		Debug.Log (socketIOEvent.data);
+	public void OnOtherPlayerConnected(SocketIOEvent socketIOEvent){
+		
 		string data = socketIOEvent.data.ToString();
 		Debug.Log (data);
-		PlayerJSON playerJSON = PlayerJSON.CreateFromJSON(data);
-		Vector3 position = new Vector3(playerJSON.position[0], playerJSON.position[1], playerJSON.position[2]);
-		Quaternion rotation = Quaternion.Euler(playerJSON.rotation[0], playerJSON.rotation[1], playerJSON.rotation[2]);
-		GameObject o = GameObject.Find(playerJSON.pseudo) as GameObject;
+
+		PlayerJSON otherplayerJSON = PlayerJSON.CreateFromJSON(data);
+		Debug.Log ("other player "+otherplayerJSON.pseudo+" is connected");
+		Vector3 position = new Vector3(otherplayerJSON.position[0], otherplayerJSON.position[1], otherplayerJSON.position[2]);
+		Quaternion rotation = Quaternion.Euler(otherplayerJSON.rotation[0], otherplayerJSON.rotation[1], otherplayerJSON.rotation[2]);
+		GameObject o = GameObject.Find(otherplayerJSON.pseudo) as GameObject;
+
 		if (o != null)
+		{
+			Debug.Log (o);
+			Debug.Log ("this player exist already");
+			return;
+		}
+		Debug.Log ("this player is new ");
+		GameObject op = Instantiate(player, position, rotation) as GameObject;
+		// here we are setting up their other fields name and if they are local
+
+		Player opC = op.GetComponent<Player>();
+
+		opC.pseudo = otherplayerJSON.pseudo;
+		opC.score = otherplayerJSON.score;
+
+		//var testr = op.GetComponent<UnityStandardAssets.Characters.FirstPerson.RigidbodyFirstPersonController> ();
+
+		//Debug.Log(testr);
+
+		//testr.enabled = false;
+		Transform ot = op.transform.Find("Canvas");
+		Transform ot1 = ot.transform.Find("pseudo");
+		Text oplayerName = ot1.GetComponent<Text>();
+		oplayerName.text = otherplayerJSON.pseudo;
+		opC.isLocalPlayer = false;
+		op.name = otherplayerJSON.pseudo;
+		Debug.Log(opC.pseudo);
+		Debug.Log(oplayerName.text);
+
+	}
+
+	public void OnOtherPlayerDisconnect(SocketIOEvent socketIOEvent){
+		
+		string data = socketIOEvent.data.ToString();
+		PlayerJSON otherplayerJSON = PlayerJSON.CreateFromJSON(data);
+		Debug.Log (otherplayerJSON.pseudo);
+		Debug.Log (" want to disconnect");
+		GameObject test = GameObject.Find(otherplayerJSON.pseudo) as GameObject;
+
+		if (test != null) {
+			Debug.Log ("this player exist and want to disconnect");
+		} else {
+			Debug.Log ("this player doesnt exist and want to disconnect");
+		}
+
+		Destroy(GameObject.Find(otherplayerJSON.pseudo));
+	}
+
+
+	public void OnPlayerMove(SocketIOEvent socketIOEvent){
+		string data = socketIOEvent.data.ToString();
+		PlayerJSON otherplayerJSON = PlayerJSON.CreateFromJSON(data);
+		Debug.Log ("other player "+otherplayerJSON.pseudo+" want to move");
+		Vector3 position = new Vector3(otherplayerJSON.position[0], otherplayerJSON.position[1], otherplayerJSON.position[2]);
+		// if it is the current player exit
+		if (otherplayerJSON.pseudo == playerNameInputLogin.text || otherplayerJSON.pseudo == playerNameInputNewAccount.text )
+		{
+			Debug.Log ("pas normal");
+			return;
+		}
+		GameObject op = GameObject.Find(otherplayerJSON.pseudo) as GameObject;
+		if (op != null) {
+			Debug.Log (op);
+			Debug.Log ("this other player  moved");
+			op.transform.position = position;
+		} else {
+			Debug.Log ("this otherplayer  want to move but doesnt exist");
+			Debug.Log (op);
+		}
+	}
+
+
+	void OnPlayerTurn(SocketIOEvent socketIOEvent){
+		string data = socketIOEvent.data.ToString(); 
+		PlayerJSON otherplayerJSON = PlayerJSON.CreateFromJSON(data);
+		Quaternion rotation = Quaternion.Euler(otherplayerJSON.rotation[0], otherplayerJSON.rotation[1], otherplayerJSON.rotation[2]);
+		// if it is the current player exit
+		if (otherplayerJSON.pseudo == playerNameInputLogin.text || otherplayerJSON.pseudo == playerNameInputNewAccount.text)
 		{
 			return;
 		}
-		GameObject p = Instantiate(player, position, rotation) as GameObject;
-		// here we are setting up their other fields name and if they are local
+		GameObject p = GameObject.Find(otherplayerJSON.pseudo) as GameObject;
+		if (p != null)
+		{
+			p.transform.rotation = rotation;
+			Transform cp = p.transform.Find("FirstPersonCharacter");
+			if (cp != null) {
+				cp.transform.rotation = rotation;
+				Debug.Log (" cp exist");
+				Debug.Log (rotation);
+				Debug.Log (rotation.x);
+				Debug.Log (cp.transform.rotation);
+			} else {
+				Debug.Log (" cp fail");
+			}
+				
+		}
+	}
 
-		Player opC = p.GetComponent<Player>();
+	void OnPlayerShoot(SocketIOEvent socketIOEvent){
+		string data = socketIOEvent.data.ToString();
+		ShootJSON shootJSON = ShootJSON.CreateFromJSON(data);
+		Vector3 velocityshoot = new Vector3(shootJSON.position[0], shootJSON.position[1], shootJSON.position[2]);
+		//find the gameobject
+		GameObject p = GameObject.Find(shootJSON.pseudo);
+		Debug.Log (shootJSON.pseudo+" has shot");
+		// instantiate the bullet etc from the player script
+		Player pc = p.GetComponent<Player>();
+		pc.CmdFire(true,velocityshoot);
+		Debug.Log (shootJSON.pseudo+" has shot");
+	}
 
-		opC.pseudo = playerJSON.pseudo;
-		opC.score = playerJSON.score;
 
-		Transform t = player.transform.Find("Canvas");
-		Debug.Log(t);
-		Transform t1 = t.transform.Find("pseudo");
-		Debug.Log(t1);
-		Text playerName = t1.GetComponent<Text>();
-		playerName.text = playerJSON.pseudo;
-		opC.isLocalPlayer = false;
 
+	void OnTouch(SocketIOEvent socketIOEvent){
+		Debug.Log (" i got shot");
+		string data = socketIOEvent.data.ToString();
+		HitJSON touch = HitJSON.CreateFromJSON(data);
+		Vector3 position = new Vector3(touch.position[0], touch.position[1], touch.position[2]);
+
+		if(localName == touch.pseudo){
+			//find the gameobject
+			GameObject p = GameObject.Find(localName);
+			if(p != null){
+				ImpactReceiver script = p.GetComponent<ImpactReceiver> ();
+				if (script) {
+					script.AddImpact (position * 2);
+					Debug.Log (" i have been shot");
+				} 
+			}
+		}
+
+			
 	}
 
 
@@ -190,10 +333,37 @@ public class NetworkManager : MonoBehaviour {
 
 
 
+	public void CommandMove(Vector3 vec3){
+		string data = JsonUtility.ToJson(new PositionJSON(vec3));
+		io.Emit("player move", data);
+	}
+
+
+	public void CommandTurn(Quaternion quat){
+		string data = JsonUtility.ToJson(new RotationJSON(quat));
+		io.Emit("player turn", data);
+		Debug.Log ("i tell my rotation");
+	}
+
+	public void CommandShoot(Vector3 vel){
+		string data = JsonUtility.ToJson(new PositionJSON(vel));
+		io.Emit("player shoot",data);
+		Debug.Log ("i tell my shot");
+	}
+
+	public void CommandHit(string pseudo,Vector3 force){
+
+		string data = JsonUtility.ToJson(new HitJSON(pseudo,force));
+		io.Emit("player hit",data);
+		Debug.Log ("i tell my shot");
+	}
+
+
+
+
 
 	[Serializable]
-	public class UserJSON
-	{
+	public class UserJSON{
 		public int id;
 		public string pseudo;
 		public int score;
@@ -211,8 +381,7 @@ public class NetworkManager : MonoBehaviour {
 
 
 	[Serializable]
-	public class  PlayerJSON
-	{
+	public class  PlayerJSON{
 		public int id;
 		public string pseudo;
 		public int score;
@@ -223,8 +392,85 @@ public class NetworkManager : MonoBehaviour {
 		{
 			return JsonUtility.FromJson<PlayerJSON>(data);
 		}
+
+		public static string CreateToJSON(Player data)
+		{
+			PlayerJSON playerjson = new PlayerJSON();
+			playerjson.id = data.id;
+			playerjson.pseudo = data.pseudo;
+			playerjson.score = data.score;
+			playerjson.position = new float[] { data.currentPosition.x, data.currentPosition.y, data.currentPosition.z };
+			playerjson.rotation = new float[] { data.currentRotation.eulerAngles.x,data.currentRotation.eulerAngles.y,data.currentRotation.eulerAngles.z };
+			return JsonUtility.ToJson(playerjson);
+		}
 	}
 
+
+	[Serializable]
+	public class PositionJSON{
+		public float[] position;
+
+		public PositionJSON(Vector3 _position)
+		{
+			position = new float[] { _position.x, _position.y, _position.z };
+		}
+
+
+			
+	}
+
+
+
+	[Serializable]
+	public class RotationJSON{
+		public float[] rotation;
+
+		public RotationJSON(Quaternion _rotation)
+		{
+			rotation = new float[] { _rotation.eulerAngles.x,_rotation.eulerAngles.y, _rotation.eulerAngles.z };
+		}
+	}
+
+
+	[Serializable]
+	public class ShootJSON{
+		public string pseudo;
+		public float[] position;
+
+		public static ShootJSON CreateFromJSON(string data)
+		{
+			return JsonUtility.FromJson<ShootJSON>(data);
+		}
+	}
+
+
+	[Serializable]
+	public class HitJSON{
+		public string pseudo;
+		public float[] position;
+
+		public  HitJSON(string pseudo,Vector3 position)
+		{
+			this.pseudo = pseudo;
+			this.position = new float[] { position.x, position.y, position.z };
+			
+		}
+
+		public static HitJSON CreateFromJSON(string data)
+		{
+			return JsonUtility.FromJson<HitJSON>(data);
+		}
+
+
+	}
+
+
+	[Serializable]
+	public class ErrorJSON{
+		public string erreur;
+
+
+	}
 
 
 

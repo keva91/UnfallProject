@@ -41,8 +41,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings:
-    url: localhost
-    port: 3000
+    url: fierce-stream-59902.herokuapp.com
+    port: 0
     sslEnabled: 0
     reconnectTime: 500
     timeToDropAck: 250
