@@ -4,6 +4,7 @@ using UnitySocketIO;
 using UnitySocketIO.Events;
 using UnityEngine.UI;
 using System;
+using UnityEngine.Networking;
 
 public class NetworkManager : MonoBehaviour {
 
@@ -116,6 +117,34 @@ public class NetworkManager : MonoBehaviour {
 
 	}
 
+
+	//fierce-stream-59902.herokuapp.com
+
+	public void UpdateScore(Player data){
+		
+	
+		Debug.Log (" before send highscore");
+		string myData = data.ToString();
+		byte[] myfData = System.Text.Encoding.UTF8.GetBytes(myData);
+		UnityWebRequest www = UnityWebRequest.Put("http://www.my-server.com/upload", myfData);
+
+	 	StartCoroutine(OnScoreResponse(www));
+	
+	}
+
+	private IEnumerator OnScoreResponse(UnityWebRequest req){
+		yield return req.Send();
+		Debug.Log (" after send highscore");
+		if(req.isNetworkError || req.isHttpError) {
+			Debug.Log(req.error);
+		}
+		else {
+			Debug.Log("Upload complete!");
+			Debug.Log(req);
+		}
+	}
+
+
 	public void NewAccount(){
 		var from = "NewAccount";
 
@@ -130,7 +159,6 @@ public class NetworkManager : MonoBehaviour {
 			WWW request = new WWW("https://fierce-stream-59902.herokuapp.com/user",rawFormData);
 			StartCoroutine(OnResponse(request,from));
 		}
-
 	}
 
 

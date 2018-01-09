@@ -24,14 +24,9 @@ public class shot : MonoBehaviour{
 
 				var dir = (collision.transform.position - playerFrom.transform.position);
 
-				//hit.GetComponent<CharacterMotor>().SetVelocity(dir*force1);
-				//.Knockback(dir);
-				NetworkManager.instance.GetComponent<NetworkManager>().CommandHit(playerhit.pseudo,dir*2);
-
-				/*ImpactReceiver script = hit.gameObject.GetComponent<ImpactReceiver> ();
-				if (script) {
-					script.AddImpact (dir * 2);
-				} */
+			
+				NetworkManager.instance.GetComponent<NetworkManager>().CommandHit(playerhit.pseudo,dir*3);
+				playerFrom.increaseScore ();
 
 				Debug.Log (playerFrom.pseudo + " hit " + playerhit.pseudo);
 				Destroy (gameObject, 0.1f);

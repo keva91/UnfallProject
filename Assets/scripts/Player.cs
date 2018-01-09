@@ -10,8 +10,10 @@ using UnityStandardAssets.Characters.FirstPerson;
 public class Player : MonoBehaviour {
 
 	public bool isLocalPlayer = false; //TODO networking
-	public int highScore;
-	public int score = 0;
+
+	[System.NonSerialized]
+	public int currentScore = 0;
+	public int score;
 	public string pseudo;
 	public int id;
 
@@ -94,16 +96,22 @@ public class Player : MonoBehaviour {
 
 	public void respawn() {
 		transform.position =  new Vector3(0,5,0);
+		Debug.Log (this.currentScore);
+		Debug.Log (this.score);
+		if(this.currentScore > this.score){
+			this.score = this.currentScore;
+			NetworkManager.instance.GetComponent<NetworkManager>().UpdateScore(this);
+			Debug.Log (" call send highscore");
+		}
+	}
 
+	public void increaseScore() {
+		this.currentScore +=  10;
+		Debug.Log (this.currentScore); 
+		Debug.Log (" increase score");
 	}
 
 	public void CmdFire(bool fakeshot,Vector3 veloc) {
-		/*var bullet1 = Instantiate(bulletPrefab, bulletSpawn.position, bulletSpawn.rotation) as GameObject;
-
-		Bullet b = bullet1.GetComponent<Bullet>();
-
-		bullet1.GetComponent<Rigidbody>().velocity = bullet1.transform.up * 6;*/
-
 
 		nextFire = Time.time + fireRate;
 
@@ -128,9 +136,7 @@ public class Player : MonoBehaviour {
 				b.fakeshot = true;
 			}
 		}
-
-	
-
+			
 		Destroy(bullet, 2.0f);
 
 	}

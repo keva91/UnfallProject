@@ -34,7 +34,7 @@ public class ImpactReceiver : MonoBehaviour {
 		if(impact.magnitude < 5.0f){
 			impact *= 4.0f;
 		}
-		if(impact.magnitude > 70.0f){
+		if(impact.magnitude > 80.0f){
 			impact = impact/2.0f;
 		}
 		Debug.Log (impact.magnitude);

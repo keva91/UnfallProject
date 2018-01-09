@@ -43,7 +43,7 @@ MonoBehaviour:
   settings:
     url: fierce-stream-59902.herokuapp.com
     port: 0
-    sslEnabled: 0
+    sslEnabled: 1
     reconnectTime: 500
     timeToDropAck: 250
     pingTimeout: 5
