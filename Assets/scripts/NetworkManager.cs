@@ -16,8 +16,13 @@ public class NetworkManager : MonoBehaviour {
 	public InputField playerNameInputLogin;
 	public Text errorNewAccount;
 	public Text errorLogin;
-	public GameObject player;
+	public GameObject playerPrefab;
+	GameObject myPlayer;
+	GameObject myscoreList;
+	public GameObject otherPlayer;
 	public string localName;
+	public GameObject HighScores;
+	public GameObject leaderBoard;
 
 
 	void Awake()
@@ -60,6 +65,8 @@ public class NetworkManager : MonoBehaviour {
 		io.On("player turn", OnPlayerTurn);
 		io.On("player shoot", OnPlayerShoot);
 		io.On("touch", OnTouch);
+		io.On("updateScore", OnUpdateScore);
+		io.On("updateHighScore", OnUpdateHighScore);
 
 
 
@@ -80,6 +87,7 @@ public class NetworkManager : MonoBehaviour {
 		yield return new WaitForSeconds(0.3f);
 
 		io.Emit("player connect");
+		StartCoroutine(getTopScore());
 
 		yield return new WaitForSeconds(0.5f);
 
@@ -90,14 +98,15 @@ public class NetworkManager : MonoBehaviour {
 		c1.gameObject.SetActive(false);
 		Vector3 position = new Vector3(0,5,0);
 		Quaternion rotation = Quaternion.Euler(0,0,0);
-		GameObject playerCstr = Instantiate(player, position, rotation) as GameObject;
+		GameObject playerCstr = Instantiate(playerPrefab, position, rotation) as GameObject;
 
 
 
 		Player pC = playerCstr.GetComponent<Player>();
 		pC.isLocalPlayer = true;
 		pC.pseudo = user.pseudo;
-		pC.score = user.score;
+		pC.Hscore = user.score;
+		pC.Hscorehud.text = "Highscore :" + user.score;
 		pC.currentPosition = position;
 		pC.currentRotation = rotation;
 
@@ -114,35 +123,13 @@ public class NetworkManager : MonoBehaviour {
 		playerCstr.name = pC.pseudo;
 		localName = pC.pseudo;
 		Debug.Log(playerName.text);
+		Debug.Log(user.score);
+		myPlayer = playerCstr;
 
 	}
 
 
-	//fierce-stream-59902.herokuapp.com
 
-	public void UpdateScore(Player data){
-		
-	
-		Debug.Log (" before send highscore");
-		string myData = data.ToString();
-		byte[] myfData = System.Text.Encoding.UTF8.GetBytes(myData);
-		UnityWebRequest www = UnityWebRequest.Put("http://www.my-server.com/upload", myfData);
-
-	 	StartCoroutine(OnScoreResponse(www));
-	
-	}
-
-	private IEnumerator OnScoreResponse(UnityWebRequest req){
-		yield return req.Send();
-		Debug.Log (" after send highscore");
-		if(req.isNetworkError || req.isHttpError) {
-			Debug.Log(req.error);
-		}
-		else {
-			Debug.Log("Upload complete!");
-			Debug.Log(req);
-		}
-	}
 
 
 	public void NewAccount(){
@@ -167,6 +154,13 @@ public class NetworkManager : MonoBehaviour {
 		var pseudo = playerNameInputLogin.text;
 		Debug.Log (pseudo);
 
+		if (GameObject.Find (pseudo)) {
+			errorLogin.text = "Ce compte est actuellement utilisé !";
+			errorLogin.gameObject.SetActive(true);
+			return;
+		}
+
+
 		if (pseudo != ""){
 			WWW request = new WWW("https://fierce-stream-59902.herokuapp.com/user/"+pseudo);
 			StartCoroutine(OnResponse(request,from));
@@ -185,6 +179,7 @@ public class NetworkManager : MonoBehaviour {
 
 			if (res.erreur == null) {
 				Debug.Log ("login successfull");
+				Debug.Log (res.ToString());
 				errorLogin.gameObject.SetActive(false);
 				Launch(req.text);
 			} else {
@@ -208,6 +203,64 @@ public class NetworkManager : MonoBehaviour {
 	}
 
 
+	//fierce-stream-59902.herokuapp.com
+
+	public void UpdateHighScore(Player data){
+
+
+		Debug.Log (" before send highscore");
+		Debug.Log (data);
+
+		string playerAsJson = PlayerJSON.CreateToJSON(data);
+
+		//io.Emit("updateHighScore", playerAsJson);
+
+		byte[] myfData = System.Text.Encoding.UTF8.GetBytes(playerAsJson);
+		UnityWebRequest www = UnityWebRequest.Put("https://fierce-stream-59902.herokuapp.com/user/score/", myfData);
+		www.SetRequestHeader("Content-Type", "application/json");
+
+		StartCoroutine(OnScoreResponse(www));
+
+	}
+
+	private IEnumerator OnScoreResponse(UnityWebRequest req){
+		yield return req.Send();
+		Debug.Log (" after send highscore");
+		Debug.Log (req);
+		if(req.isNetworkError || req.isHttpError) {
+			Debug.Log(req.error);
+		}
+		else {
+			Debug.Log("Upload complete!");
+			Debug.Log(req.downloadHandler.text);
+			string playerAsJson = PlayerJSON.CreateToJSON(myPlayer.GetComponent<Player>());
+			io.Emit("updateHighScore", playerAsJson);
+
+		}
+	}
+		
+
+
+	public IEnumerator getTopScore(){
+
+
+		Debug.Log ("getTopScore");
+
+		UnityWebRequest www = UnityWebRequest.Get("https://fierce-stream-59902.herokuapp.com/user/classement/top10");
+
+		yield return www.Send();
+		if (www.isNetworkError)
+		{
+			Debug.Log(www.error);
+		}
+		else
+		{
+			Debug.Log("Received " + www.downloadHandler.text);
+			scoreList scoreHList = HighScores.GetComponent<scoreList> ();
+			scoreHList.changeHighScoreList(www.downloadHandler.text.ToString());
+		}
+
+	}
 
 	public void OnOtherPlayerConnected(SocketIOEvent socketIOEvent){
 		
@@ -227,13 +280,13 @@ public class NetworkManager : MonoBehaviour {
 			return;
 		}
 		Debug.Log ("this player is new ");
-		GameObject op = Instantiate(player, position, rotation) as GameObject;
+		GameObject op = Instantiate(otherPlayer, position, rotation) as GameObject;
 		// here we are setting up their other fields name and if they are local
 
 		Player opC = op.GetComponent<Player>();
 
 		opC.pseudo = otherplayerJSON.pseudo;
-		opC.score = otherplayerJSON.score;
+		opC.Hscore = otherplayerJSON.Hscore;
 
 		//var testr = op.GetComponent<UnityStandardAssets.Characters.FirstPerson.RigidbodyFirstPersonController> ();
 
@@ -261,6 +314,7 @@ public class NetworkManager : MonoBehaviour {
 
 		if (test != null) {
 			Debug.Log ("this player exist and want to disconnect");
+			myscoreList.GetComponent<scoreList>().deleteScoreList(otherplayerJSON.pseudo);
 		} else {
 			Debug.Log ("this player doesnt exist and want to disconnect");
 		}
@@ -308,10 +362,6 @@ public class NetworkManager : MonoBehaviour {
 			Transform cp = p.transform.Find("FirstPersonCharacter");
 			if (cp != null) {
 				cp.transform.rotation = rotation;
-				Debug.Log (" cp exist");
-				Debug.Log (rotation);
-				Debug.Log (rotation.x);
-				Debug.Log (cp.transform.rotation);
 			} else {
 				Debug.Log (" cp fail");
 			}
@@ -357,6 +407,27 @@ public class NetworkManager : MonoBehaviour {
 
 
 
+	void OnUpdateScore(SocketIOEvent socketIOEvent){
+		Debug.Log ("OnUpdateScore");
+
+		string data = socketIOEvent.data.ToString();
+		ScoreJSON score = ScoreJSON.CreateFromJSON (data);
+
+		//scoreList scoreList = leaderBoard.GetComponent<scoreList> ();currentScoreList
+	
+		if (myscoreList == null) {
+			myscoreList = GameObject.Find ("currentScoreList");
+		}
+			
+		myscoreList.GetComponent<scoreList>().changeScoreList(score);
+	}
+
+
+
+	void OnUpdateHighScore(SocketIOEvent socketIOEvent){
+		Debug.Log ("OnUpdateHighScore");
+		StartCoroutine(getTopScore());
+	}
 
 
 
@@ -387,6 +458,15 @@ public class NetworkManager : MonoBehaviour {
 	}
 
 
+	public void UpdateScore(Player data){
+
+		Debug.Log (" before send score");
+
+		string playerAsJson = PlayerJSON.CreateToJSON(data);
+
+		io.Emit("updateScore", playerAsJson);
+	}
+
 
 
 
@@ -397,12 +477,12 @@ public class NetworkManager : MonoBehaviour {
 		public int score;
 
 
-		public UserJSON(int id, string pseudo,int score)
+		public UserJSON(int id, string pseudo,int Hscore)
 		{
 			
 			this.id = id;
 			this.pseudo = pseudo;
-			this.score = score;
+			this.score = Hscore;
 
 		}
 	}
@@ -412,7 +492,8 @@ public class NetworkManager : MonoBehaviour {
 	public class  PlayerJSON{
 		public int id;
 		public string pseudo;
-		public int score;
+		public int Hscore;
+		public int currentScore;
 		public float[] position;
 		public float[] rotation;
 
@@ -426,7 +507,8 @@ public class NetworkManager : MonoBehaviour {
 			PlayerJSON playerjson = new PlayerJSON();
 			playerjson.id = data.id;
 			playerjson.pseudo = data.pseudo;
-			playerjson.score = data.score;
+			playerjson.Hscore = data.Hscore;
+			playerjson.currentScore = data.currentScore;
 			playerjson.position = new float[] { data.currentPosition.x, data.currentPosition.y, data.currentPosition.z };
 			playerjson.rotation = new float[] { data.currentRotation.eulerAngles.x,data.currentRotation.eulerAngles.y,data.currentRotation.eulerAngles.z };
 			return JsonUtility.ToJson(playerjson);
@@ -496,6 +578,27 @@ public class NetworkManager : MonoBehaviour {
 	[Serializable]
 	public class ErrorJSON{
 		public string erreur;
+
+
+	}
+
+
+
+	[Serializable]
+	public class ScoreJSON{
+		public string pseudo;
+		public int score;
+
+		public  ScoreJSON(string pseudo,int score)
+		{
+			this.pseudo = pseudo;
+			this.score = score;
+		}
+
+		public static ScoreJSON CreateFromJSON(string data)
+		{
+			return JsonUtility.FromJson<ScoreJSON>(data);
+		}
 
 
 	}

@@ -20,6 +20,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4742529669113880}
   - component: {fileID: 114095963111689414}
+  - component: {fileID: 114151845331516742}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -58,4 +59,22 @@ MonoBehaviour:
   playerNameInputLogin: {fileID: 0}
   errorNewAccount: {fileID: 0}
   errorLogin: {fileID: 0}
-  player: {fileID: 1242927339448220, guid: 79ae88e66e3f1cc49bf2da934a36218b, type: 2}
+  playerPrefab: {fileID: 1581972000802490, guid: 00f3986fbc8cd484cafc9d8b4d94f020,
+    type: 2}
+  otherPlayer: {fileID: 1122916936429394, guid: cc2694100aace7c418584d0f5370628e,
+    type: 2}
+  localName: 
+  HighScores: {fileID: 0}
+  leaderBoard: {fileID: 1791195061604370, guid: 4a9b889f4958d124b96fc80857e7d390,
+    type: 2}
+--- !u!114 &114151845331516742
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1201081360877358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f76ca08b1e8268748bea2ef03d9e14de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

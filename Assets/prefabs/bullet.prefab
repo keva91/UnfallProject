@@ -108,7 +108,7 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
+  m_Size: {x: 1.09, y: 1.15, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &114637455773107366
 MonoBehaviour:
@@ -121,5 +121,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4dfea986d6f803940a7655f7fa25d303, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerFrom: 
-  force: 50
+  playerFrom: {fileID: 0}
+  fakeshot: 0
+  alreadyshot: 0
+  explo: {fileID: 1107407573653906, guid: 5ade5d829b134f748a42214de9507e27, type: 2}
+  force1: 20

@@ -27,15 +27,16 @@ public class ImpactReceiver : MonoBehaviour {
 	}
 
 
-	public void AddImpact(Vector3 force){
-		var dir = force.normalized;
+	public void AddImpact(Vector3 direction){
+		var dir = direction.normalized;
 		dir.y = 0.5f; // add some velocity upwards - it's cooler this way
-		impact += dir.normalized * force.magnitude / mass;
-		if(impact.magnitude < 5.0f){
-			impact *= 4.0f;
+		impact += dir.normalized * direction.magnitude / mass;
+		if(impact.magnitude < 28.0f){
+			impact *= 3.0f;
+			Debug.Log ("low magnitude :"+impact.magnitude);
 		}
-		if(impact.magnitude > 80.0f){
-			impact = impact/2.0f;
+		if(impact.magnitude > 100.0f){
+			impact = impact/1.5f;
 		}
 		Debug.Log (impact.magnitude);
 

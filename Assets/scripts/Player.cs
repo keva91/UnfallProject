@@ -4,6 +4,7 @@ using UnityEngine.Assertions;
 using UnityEngine;
 using System;
 using UnityStandardAssets.Characters.FirstPerson;
+using UnityEngine.UI;
 
 
 
@@ -13,7 +14,9 @@ public class Player : MonoBehaviour {
 
 	[System.NonSerialized]
 	public int currentScore = 0;
-	public int score;
+	public Text currentScorehud;
+	public int Hscore;
+	public  Text Hscorehud;
 	public string pseudo;
 	public int id;
 
@@ -25,6 +28,7 @@ public class Player : MonoBehaviour {
 	public double fireRate = 0.5;
 	private double nextFire = 0.0;
 	public Vector3 shotVelocity;
+	public GameObject myArm; 
 
 	Vector3 oldPosition;
 	public Vector3 currentPosition;
@@ -43,6 +47,13 @@ public class Player : MonoBehaviour {
 		currentPosition = oldPosition;
 		oldRotation = transform.rotation;
 		currentRotation = oldRotation;
+
+
+		if (isLocalPlayer) {
+			this.currentScorehud.text = "score :";
+			//myArm = this.transform.Find("arm").gameObject;
+		}
+
     }
 
 
@@ -56,10 +67,7 @@ public class Player : MonoBehaviour {
 				ctrl.enabled = true;
 			}
 		}else{
-			if (cam.enabled){
-				cam.enabled = false;
-				ctrl.enabled = false;
-			}
+			
 			return;
 		}
 
@@ -79,7 +87,7 @@ public class Player : MonoBehaviour {
 			NetworkManager.instance.GetComponent<NetworkManager>().CommandTurn(transform.rotation);
 		}
 
-		if (currentPosition.y < -3) {
+		if (currentPosition.y < -8) {
 			respawn();
 		}
 
@@ -87,8 +95,13 @@ public class Player : MonoBehaviour {
 			Vector3 fveloc = new Vector3();
 			CmdFire(false,fveloc);
 			NetworkManager.instance.GetComponent<NetworkManager>().CommandShoot(shotVelocity);
+			myArm.transform.localPosition  = new Vector3(myArm.transform.localPosition .x, myArm.transform.localPosition .y,0.3198293f);
 		}
 
+		if (myArm && myArm.transform.localPosition.z < 0.61f){
+			// consumes recoil
+			myArm.transform.localPosition = Vector3.Lerp(myArm.transform.localPosition, new Vector3(myArm.transform.localPosition.x, myArm.transform.localPosition.y, 0.61982f), 5*Time.deltaTime);
+		}
 
 
 
@@ -97,17 +110,22 @@ public class Player : MonoBehaviour {
 	public void respawn() {
 		transform.position =  new Vector3(0,5,0);
 		Debug.Log (this.currentScore);
-		Debug.Log (this.score);
-		if(this.currentScore > this.score){
-			this.score = this.currentScore;
-			NetworkManager.instance.GetComponent<NetworkManager>().UpdateScore(this);
+		Debug.Log (this.Hscore);
+		if(this.currentScore > this.Hscore){
+			this.Hscore = this.currentScore;
+			this.Hscorehud.text = "HighScore : "+ this.currentScore;
+			NetworkManager.instance.GetComponent<NetworkManager>().UpdateHighScore(this);
 			Debug.Log (" call send highscore");
 		}
+		this.currentScore = 0;
+		this.currentScorehud.text = " score : 0";
+		NetworkManager.instance.GetComponent<NetworkManager>().UpdateScore(this);
 	}
 
 	public void increaseScore() {
 		this.currentScore +=  10;
-		Debug.Log (this.currentScore); 
+		this.currentScorehud.text = "score : " + this.currentScore;
+		NetworkManager.instance.GetComponent<NetworkManager>().UpdateScore(this);
 		Debug.Log (" increase score");
 	}
 
